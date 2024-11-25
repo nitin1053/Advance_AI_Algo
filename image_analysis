@@ -1,0 +1,76 @@
+import pywt
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.linalg import hadamard
+from google.colab.patches import cv2_imshow
+
+
+def resize_to_square(image, size=256):
+    return cv2.resize(image, (size, size))
+
+
+# Read Image
+image = cv2.imread("/content/shopping (2).webp")
+gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+cv2_imshow(image)
+cv2_imshow(gray_image)
+
+# DFT
+dft = np.fft.fft2(gray_image)
+dft_shifted = np.fft.fftshift(dft)
+
+magnitude_spectrum = np.abs(dft_shifted)
+magnitude_spectrum_log = np.log(1 + magnitude_spectrum)
+magnitude_spectrum_normalized = cv2.normalize(magnitude_spectrum_log, None, 0, 255, cv2.NORM_MINMAX)
+colored_spectrum = cv2.applyColorMap(np.uint8(magnitude_spectrum_normalized), cv2.COLORMAP_JET)
+
+plt.figure(figsize=(10, 6))
+plt.imshow(colored_spectrum)
+plt.title('DFT Spectrum')
+plt.axis('off')
+plt.show()
+
+# DCT
+dct = cv2.dct(np.float32(gray_image))
+dct_magnitude_log = np.log1p(np.abs(dct))
+dct_normalized = cv2.normalize(dct_magnitude_log, None, 0, 255, cv2.NORM_MINMAX)
+colored_dct = cv2.applyColorMap(np.uint8(dct_normalized), cv2.COLORMAP_JET)
+
+cv2_imshow(colored_dct)
+print("\n")
+
+# Slant Transformation
+def apply_slant(image):
+    rows, cols = image.shape[:2]
+    shear_matrix = np.float32([[1, 0.5, 0], [0.5, 1, 0]])
+    sheared_image = cv2.warpAffine(image, shear_matrix, (cols, rows))
+    return sheared_image
+
+slant_image = apply_slant(resize_to_square(image))
+cv2_imshow(slant_image)
+
+# Haar Transform
+def apply_haar(image):
+    grayscale_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    coeffs2 = pywt.dwt2(grayscale_image, 'haar')
+    LL, (LH, HL, HH) = coeffs2
+    haar_image = np.abs(LL)
+    haar_normalized = cv2.normalize(haar_image, None, 0, 255, cv2.NORM_MINMAX)
+    return np.uint8(haar_normalized)
+
+haar_image = apply_haar(image)
+cv2_imshow(cv2.applyColorMap(haar_image, cv2.COLORMAP_JET))
+
+# Walsh-Hadamard Transform
+def walsh_hadamard_new(image):
+    new_size = 256
+    grey_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    resized_image = resize_to_square(grey_image, new_size)
+    hadamard_matrix = hadamard(new_size) / new_size
+    walsh_hadamard_transformed = np.dot(hadamard_matrix, resized_image).dot(hadamard_matrix)
+    reconstructed_image = cv2.normalize(walsh_hadamard_transformed, None, 0, 255, cv2.NORM_MINMAX)
+    return np.uint8(reconstructed_image)
+
+walsh_image = walsh_hadamard_new(image)
+cv2_imshow(cv2.applyColorMap(walsh_image, cv2.COLORMAP_JET))
