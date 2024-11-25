@@ -1,0 +1,199 @@
+import re
+import string
+import nltk
+import spacy
+from textblob import TextBlob
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from datetime import datetime
+
+
+# Download necessary NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
+
+
+# Load Spacy model
+nlp = spacy.load('en_core_web_sm')
+
+
+# 1. Text Preprocessing Functions
+
+
+# Tokenization and Lowercasing
+def tokenize_and_lowercase(text):
+   tokens = word_tokenize(text.lower())
+   return tokens
+
+
+# Remove Special Characters
+def remove_special_characters(text):
+   return re.sub(r'[^A-Za-z0-9\s]', '', text)
+
+
+# Contraction Expansion using TextBlob
+def expand_contractions(text):
+   return str(TextBlob(text).correct())
+
+
+# Remove Stop Words
+def remove_stop_words(tokens):
+   stop_words = set(stopwords.words('english'))
+   return [word for word in tokens if word not in stop_words]
+
+
+# Correct Spelling using TextBlob
+def correct_spelling(text):
+   return str(TextBlob(text).correct())
+
+
+# Stemming
+def perform_stemming(tokens):
+   stemmer = PorterStemmer()
+   return [stemmer.stem(word) for word in tokens]
+
+
+# Lemmatization
+def perform_lemmatization(tokens):
+   lemmatizer = WordNetLemmatizer()
+   return [lemmatizer.lemmatize(word) for word in tokens]
+
+
+
+
+# 2. Feature Extraction Functions
+
+
+# Aggregated Features
+def get_aggregated_features(text):
+   word_count = len(word_tokenize(text))
+   char_count = len(text)
+   sentence_count = len(nltk.sent_tokenize(text))
+   return {'word_count': word_count, 'char_count': char_count, 'sentence_count': sentence_count}
+
+
+# Date-Time Features
+def get_datetime_features():
+   now = datetime.now()
+   return {
+       'current_date': now.date(),
+       'current_time': now.time(),
+       'year': now.year,
+       'month': now.month,
+       'day': now.day,
+       'hour': now.hour,
+       'minute': now.minute
+   }
+
+
+# Sentiment Analysis using TextBlob
+def get_sentiment(text):
+   sentiment = TextBlob(text).sentiment
+   return {'polarity': sentiment.polarity, 'subjectivity': sentiment.subjectivity}
+
+
+# Extraction of Nouns
+def extract_nouns(text):
+   blob = TextBlob(text)
+   return [word for word, pos in blob.tags if pos == 'NN']
+
+
+# NLP-Based Features: Named Entity Recognition
+def get_named_entities(text):
+   doc = nlp(text)
+   return [(ent.text, ent.label_) for ent in doc.ents]
+
+
+# NLP-Based Features: POS Tagging
+def get_pos_tags(text):
+   doc = nlp(text)
+   return [(token.text, token.pos_) for token in doc]
+
+
+
+
+# Example usage
+if __name__ == "__main__":
+   # Sample text
+   text = """On October 15, 2024, Elon Musk announced a major update on Tesla's new AI project during a conference in San Francisco.
+   The event was attended by over 1,000 engineers and scientists from different parts of the world.
+   In his keynote, Musk highlighted the advancements in AI-driven electric vehicles, predicting that Tesla's self-driving cars
+   will hit the roads by 2025. He also shared updates on SpaceX's plans for the Mars mission, set to take place in the late 2030s.
+   Several experts, including Dr. Jane Doe from MIT, expressed optimism about these futuristic technologies.
+   The stock prices of Tesla and SpaceX surged by 5% the following day."""
+
+
+   # Preprocessing
+   tokens = tokenize_and_lowercase(text)
+   print(f"Tokens: {tokens}")
+   print("\n")
+
+
+   text_no_special = remove_special_characters(text)
+   print(f"Text without special characters: {text_no_special}")
+   print("\n")
+
+
+   expanded_text = expand_contractions(text)
+   print(f"Expanded Contractions: {expanded_text}")
+   print("\n")
+
+
+   tokens_no_stopwords = remove_stop_words(tokens)
+   print(f"Tokens without stop words: {tokens_no_stopwords}")
+   print("\n")
+
+
+   corrected_text = correct_spelling(text)
+   print(f"Corrected Text: {corrected_text}")
+   print("\n")
+
+
+   stemmed_tokens = perform_stemming(tokens)
+   print(f"Stemmed Tokens: {stemmed_tokens}")
+   print("\n")
+
+
+   lemmatized_tokens = perform_lemmatization(tokens)
+   print(f"Lemmatized Tokens: {lemmatized_tokens}")
+   print("\n")
+
+
+   # Feature Extraction
+   aggregated_features = get_aggregated_features(text)
+   print(f"Aggregated Features: {aggregated_features}")
+   print("\n")
+
+
+
+
+   datetime_features = get_datetime_features()
+   print(f"Date-Time Features: {datetime_features}")
+   print("\n")
+
+
+
+
+   sentiment = get_sentiment(text)
+   print(f"Sentiment: {sentiment}")
+   print("\n")
+
+
+
+
+   nouns = extract_nouns(text)
+   print(f"Nouns: {nouns}")
+   print("\n")
+
+
+   named_entities = get_named_entities(text)
+   print(f"Named Entities: {named_entities}")
+   print("\n")
+
+
+   pos_tags = get_pos_tags(text)
+   print(f"POS Tags: {pos_tags}")
+   print("\n")
