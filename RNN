@@ -1,0 +1,57 @@
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import SimpleRNN, Dense
+from tensorflow.keras.optimizers import Adam
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# Sample Sequential Data (e.g., time-series or text)
+data = np.array([i for i in range(100)])
+
+
+# Prepare Data
+X = data[:-1]  # All except last element
+y = data[1:]   # All except first element
+
+
+X = X.reshape((X.shape[0], 1, 1))  # Reshape for RNN input (batch, time_steps, features)
+
+
+# Define the RNN Model
+model = Sequential([
+   SimpleRNN(64, input_shape=(1, 1), activation='relu', return_sequences=False),
+   Dense(1)
+])
+
+
+model.compile(optimizer=Adam(), loss='mean_squared_error')
+
+
+# Train the Model
+history = model.fit(X, y, epochs=100, batch_size=1, verbose=0)
+
+
+# Plotting the Training Loss
+plt.figure(figsize=(10, 6))
+plt.plot(history.history['loss'], label='Training Loss')
+plt.title('RNN Training Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+
+# Predict
+predictions = model.predict(X)
+
+
+# Plotting Predicted vs Actual Values
+plt.figure(figsize=(10, 6))
+plt.plot(y, label='Actual')
+plt.plot(predictions, label='Predicted')
+plt.title('RNN Predicted vs Actual Values')
+plt.xlabel('Time Step')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
