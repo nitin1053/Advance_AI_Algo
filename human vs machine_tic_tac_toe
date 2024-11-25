@@ -1,0 +1,78 @@
+import random
+
+def print_board(board):
+    for row in board:
+        print(" | ".join(row))
+        print("-" * 9)
+
+
+def check_winner(board, player):
+    # Check rows, columns, and diagonals for a win
+    for i in range(3):
+        if all([cell == player for cell in board[i]]):  # Check rows
+            return True
+        if all([board[j][i] == player for j in range(3)]):  # Check columns
+            return True
+    if all([board[i][i] == player for i in range(3)]) or all([board[i][2 - i] == player for i in range(3)]):
+        return True
+    return False
+
+
+def is_draw(board):
+    return all(cell != ' ' for row in board for cell in row)
+
+
+def get_available_moves(board):
+    return [(i, j) for i in range(3) for j in range(3) if board[i][j] == ' ']
+
+
+def ai_move(board):
+    available_moves = get_available_moves(board)
+    return random.choice(available_moves)  # Randomly select an empty cell
+
+
+def tic_tac_toe():
+    board = [[' ' for _ in range(3)] for _ in range(3)]
+    current_player = 'X'  # Human starts first
+
+    print("Welcome to Tic-Tac-Toe!")
+    print("You are 'X', and the machine is 'O'. Good luck!")
+
+    while True:
+        print_board(board)
+
+        if current_player == 'X':  # Human's turn
+            while True:
+                try:
+                    row = int(input(f"Player {current_player}, enter row (0, 1, 2): "))
+                    col = int(input(f"Player {current_player}, enter column (0, 1, 2): "))
+                    if board[row][col] == ' ':
+                        board[row][col] = 'X'
+                        break
+                    else:
+                        print("Cell is already occupied! Try again.")
+                except (ValueError, IndexError):
+                    print("Invalid input! Enter numbers between 0 and 2.")
+        else:  # Machine's turn
+            print("Machine is making its move...")
+            row, col = ai_move(board)
+            board[row][col] = 'O'
+
+        # Check for a winner
+        if check_winner(board, current_player):
+            print_board(board)
+            print(f"Player {current_player} wins!")
+            break
+
+        # Check for a draw
+        if is_draw(board):
+            print_board(board)
+            print("It's a draw!")
+            break
+
+        # Switch player
+        current_player = 'O' if current_player == 'X' else 'X'
+
+
+if __name__ == "__main__":
+    tic_tac_toe()
