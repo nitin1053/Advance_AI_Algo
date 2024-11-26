@@ -1,64 +1,53 @@
+# Install required packages (if not already installed)
 !pip install nltk textblob
+
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from textblob import TextBlob
+import matplotlib.pyplot as plt
 
-
-# Download stop words if not done already
+# Download necessary NLTK data
 nltk.download('punkt')
 nltk.download('stopwords')
-# Sample data
-texts = [
-   "I absolutely love this product, it has transformed my life!",
-   "The new design is okay, but I expected something more innovative.",
-   "I had a horrible experience with the customer service.",
-   "This brand really understands what customers want. Highly recommended!",
-   "The product is decent but nothing special.",
-   "I'm never buying from this company again, totally disappointed."
-]
+nltk.download('wordnet')
 
+# Load data from Text3.txt
+with open("/content/Text 3.txt", "r") as file:
+    texts = file.readlines()
 
 # Preprocessing function
 def preprocess_text(text):
-   # Tokenize text
-   tokens = word_tokenize(text.lower())
+    # Tokenize text
+    tokens = word_tokenize(text.lower())
+    
+    # Lemmatization and stop-word removal
+    lemmatizer = nltk.WordNetLemmatizer()
+    processed_tokens = [
+        lemmatizer.lemmatize(token)
+        for token in tokens
+        if token not in stopwords.words('english') and token.isalpha()
+    ]
+    return ' '.join(processed_tokens)
 
-
-   # Lemmatization and stop-word removal
-   lemmatizer = nltk.WordNetLemmatizer()
-   nltk.download('wordnet')
-   processed_tokens = [
-       lemmatizer.lemmatize(token) for token in tokens if token not in stopwords.words('english') and token.isalpha()
-   ]
-   return ' '.join(processed_tokens)
-
-
+# Preprocess each text
 preprocessed_texts = [preprocess_text(text) for text in texts]
-print(preprocessed_texts)
-# Analyzing sentiment
+
+# Function to analyze sentiment
 def get_sentiment(text):
-   analysis = TextBlob(text)
-   return analysis.sentiment.polarity
+    analysis = TextBlob(text)
+    return analysis.sentiment.polarity
 
-
+# Calculate sentiment scores
 sentiments = [get_sentiment(text) for text in preprocessed_texts]
 
-
-# Printing results
-for text, sentiment in zip(texts, sentiments):
-   print(f"Text: {text}\nSentiment Score: {sentiment}\n")
-import matplotlib.pyplot as plt
-
+# Print results
+for original_text, sentiment in zip(texts, sentiments):
+    print(f"Text: {original_text.strip()}\nSentiment Score: {sentiment}\n")
 
 # Plot sentiment scores
 plt.bar(range(len(sentiments)), sentiments)
 plt.xlabel("Text Index")
 plt.ylabel("Sentiment Score")
-plt.title("Sentiment Analysis of Marketing-Related Text")
+plt.title("Sentiment Analysis of Texts from Text3.txt")
 plt.show()
-
-
-
-
-
