@@ -1,57 +1,62 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import SimpleRNN, Dense
-from tensorflow.keras.optimizers import Adam
-import numpy as np
-import matplotlib.pyplot as plt
+from tensorflow.keras.layers import Embedding, SimpleRNN, Dense
 
+# Step 1: Load and Preprocess the Data
+def load_and_preprocess_text(file_path, seq_length=100):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        text = file.read()
 
-# Sample Sequential Data (e.g., time-series or text)
-data = np.array([i for i in range(100)])
+    vocab = sorted(set(text))  # Unique characters
+    char2idx = {char: idx for idx, char in enumerate(vocab)}
+    idx2char = np.array(vocab)
+    text_as_int = np.array([char2idx[char] for char in text])
 
+    # Prepare input-output pairs
+    char_dataset = tf.data.Dataset.from_tensor_slices(text_as_int)
+    sequences = char_dataset.batch(seq_length + 1, drop_remainder=True)
 
-# Prepare Data
-X = data[:-1]  # All except last element
-y = data[1:]   # All except first element
+    dataset = sequences.map(lambda chunk: (chunk[:-1], chunk[1:]))
+    return dataset, char2idx, idx2char, len(vocab)
 
+file_path = "RNN 1.txt"  # Replace with your .txt file path
+seq_length = 100
+dataset, char2idx, idx2char, vocab_size = load_and_preprocess_text(file_path, seq_length)
 
-X = X.reshape((X.shape[0], 1, 1))  # Reshape for RNN input (batch, time_steps, features)
+# Batch and shuffle
+BATCH_SIZE = 64
+dataset = dataset.shuffle(10000).batch(BATCH_SIZE, drop_remainder=True)
 
+# Step 2: Build the RNN Model
+def build_rnn_model(vocab_size, embedding_dim=256, rnn_units=103):
+    return Sequential([
+        Embedding(vocab_size, embedding_dim),
+        SimpleRNN(rnn_units, return_sequences=True),
+        Dense(vocab_size)
+    ])
 
-# Define the RNN Model
-model = Sequential([
-   SimpleRNN(64, input_shape=(1, 1), activation='relu', return_sequences=False),
-   Dense(1)
-])
+model = build_rnn_model(vocab_size)
+model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True))
 
+# Step 3: Train the Model
+model.fit(dataset, epochs=20)
 
-model.compile(optimizer=Adam(), loss='mean_squared_error')
+# Step 4: Generate Text
+def generate_text(model, start_string, char2idx, idx2char, temperature=1.0, num_generate=1000):
+    input_eval = [char2idx[char] for char in start_string]
+    input_eval = tf.expand_dims(input_eval, 0)
+    generated_text = []
 
+    for _ in range(num_generate):
+        predictions = model(input_eval)
+        predictions = tf.squeeze(predictions, 0) / temperature
+        predicted_id = tf.random.categorical(predictions, num_samples=1)[-1, 0].numpy()
+        input_eval = tf.expand_dims([predicted_id], 0)
+        generated_text.append(idx2char[predicted_id])
 
-# Train the Model
-history = model.fit(X, y, epochs=100, batch_size=1, verbose=0)
+    return start_string + ''.join(generated_text)
 
-
-# Plotting the Training Loss
-plt.figure(figsize=(10, 6))
-plt.plot(history.history['loss'], label='Training Loss')
-plt.title('RNN Training Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
-plt.show()
-
-
-# Predict
-predictions = model.predict(X)
-
-
-# Plotting Predicted vs Actual Values
-plt.figure(figsize=(10, 6))
-plt.plot(y, label='Actual')
-plt.plot(predictions, label='Predicted')
-plt.title('RNN Predicted vs Actual Values')
-plt.xlabel('Time Step')
-plt.ylabel('Value')
-plt.legend()
-plt.show()
+# Example: Generate text
+start_string = "Once upon a time"
+print(generate_text(model, start_string, char2idx, idx2char))
