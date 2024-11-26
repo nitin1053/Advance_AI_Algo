@@ -1,0 +1,68 @@
+!python -m spacy download en_core_web_sm
+
+
+pip install PyPDF2 contractions spacy
+
+
+
+# Install necessary libraries
+import PyPDF2
+import nltk
+
+import re
+import contractions
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+import spacy
+
+# Download necessary NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+
+# Path to the uploaded PDF
+pdf_path = "/content/Nlp1.pdf"
+
+# Function to extract text from PDF
+def extract_text_from_pdf(pdf_path):
+    with open(pdf_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in range(len(reader.pages)):
+            text += reader.pages[page].extract_text()
+    return text
+
+
+# Extract text from the PDF
+text = extract_text_from_pdf(pdf_path)
+
+
+# Preprocessing the extracted text
+# Convert text to lowercase and tokenize
+nltk.download('punkt_tab')
+nltk.download('stopwords')
+tokens = word_tokenize(text.lower())
+
+# Remove special characters using regex
+tokens = [re.sub(r'\W+', '', token) for token in tokens if re.sub(r'\W+', '', token)]
+
+# Expand contractions
+expanded_tokens = [contractions.fix(word) for word in tokens]
+
+# Remove stopwords
+stop_words = set(stopwords.words('english'))
+tokens_without_stopwords = [word for word in expanded_tokens if word not in stop_words]
+
+# Load the spaCy model for POS tagging
+nlp = spacy.load("en_core_web_sm")
+
+# Join tokens into a final string for further NLP processing
+final_text = ' '.join(tokens_without_stopwords)
+
+# Process the final text with spaCy
+doc = nlp(final_text)
+
+# Print Part-of-Speech tagging results
+print("Part of Speech Tagging:")
+for token in doc:
+    print(f"{token.text}: {token.pos_}")
