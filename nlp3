@@ -1,0 +1,110 @@
+!pip install pyspellchecker
+!pip install PyPDF2 # Install the PyPDF2 library using pip
+# Install necessary libraries
+import PyPDF2
+import nltk
+
+from spellchecker import SpellChecker
+import spacy
+
+from nltk.corpus import wordnet
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+
+# Download necessary NLTK data
+nltk.download('wordnet')
+
+# Path to the uploaded PDF
+pdf_path = "/content/Nlp1.pdf"
+
+# Function to extract text from PDF
+def extract_text_from_pdf(pdf_path):
+    with open(pdf_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in range(len(reader.pages)):
+            text += reader.pages[page].extract_text()
+    return text
+
+
+# Extract text from the PDF
+text = extract_text_from_pdf(pdf_path)
+
+!pip install contractions
+import contractions
+
+import re
+import nltk
+from nltk.corpus import stopwords  # Import the stopwords module
+from nltk.tokenize import word_tokenize
+
+nltk.download('punkt')  # Download punkt for word_tokenize if not downloaded
+nltk.download('stopwords')  # Download stopwords if not downloaded
+
+
+# Preprocessing the extracted text
+# Convert text to lowercase and tokenize
+tokens = word_tokenize(text.lower())
+
+# Remove special characters using regex
+tokens = [re.sub(r'\W+', '', token) for token in tokens if re.sub(r'\W+', '', token)]
+
+# Expand contractions
+expanded_tokens = [contractions.fix(word) for word in tokens]
+
+# Remove stopwords
+stop_words = set(stopwords.words('english')) # Now stopwords should be defined
+tokens_without_stopwords = [word for word in expanded_tokens if word not in stop_words]
+
+
+# Stemming
+stemmer = PorterStemmer()
+stemmed_tokens = [stemmer.stem(word) for word in tokens_without_stopwords]
+print(stemmed_tokens)
+
+
+# Lemmatization
+lemmatizer = WordNetLemmatizer()
+lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens_without_stopwords]
+print(lemmatized_tokens)
+
+# Stemming
+stemmer = PorterStemmer()
+stemmed_tokens = [stemmer.stem(word) for word in tokens_without_stopwords]
+print(stemmed_tokens)
+
+
+# Lemmatization
+lemmatizer = WordNetLemmatizer()
+lemmatized_tokens = [lemmatizer.lemmatize(word) for word in tokens_without_stopwords]
+print(lemmatized_tokens)
+
+
+#Aggregated feautre extraction
+# Aggregated features like text length, word count, etc.
+text_length = len(text)
+word_count = len(lemmatized_tokens)
+sentence_count = len(nltk.sent_tokenize(text))
+
+print(f'text_length: {text_length} word_count: {word_count} sentence_count: {sentence_count}')
+
+
+import spacy
+
+# Load the spaCy model for English
+nlp = spacy.load("en_core_web_sm")
+
+# Join tokens into a final string for further NLP processing
+final_text = ' '.join(tokens_without_stopwords)
+
+# Process the final text with spaCy
+doc = nlp(final_text)
+
+# NER (Named Entity Recognition)
+print("\nNamed Entities:")
+for ent in doc.ents:
+    print(f"{ent.text}: {ent.label_}")
+
+
+
+
+
